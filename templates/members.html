@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 成员 · {{ room['name'] }}{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="page-shell room-content-shell">
+  {% set active_member_count = members|selectattr('active')|list|length %}
+  {% set room_section = '成员' %}
+  {% set room_section_detail = active_member_count ~ ' 位有效成员' %}
+  {% include "_room_header.html" %}
+
+  {% if room['is_owner'] %}
+    {% if invite_url %}
+      <section class="panel invite-result-panel" aria-labelledby="invite-result-title">
+        <div><h2 id="invite-result-title">邀请已生成</h2><p>链接只在本次显示，请立即复制或让对方扫码。</p><div class="copy-field"><label class="sr-only" for="invite-url">邀请链接</label><input id="invite-url" value="{{ invite_url }}" readonly><button type="button" class="secondary-button" data-copy-value="{{ invite_url }}">复制链接</button></div></div>
+        <img src="{{ invite_qr }}" alt="房间邀请二维码" width="160" height="160">
+      </section>
+    {% endif %}
+    <section class="workspace-section member-onboarding" aria-labelledby="member-add-title">
+      <header class="workspace-section__heading">
+        <div><h2 id="member-add-title">添加成员</h2><p>通过邀请链接，或直接按账号添加。</p></div>
+      </header>
+      <div class="member-tool-grid">
+      <article class="member-tool">
+        <div class="member-tool__heading"><h3>邀请链接</h3><p>设置身份、评分权限、有效期与使用次数。</p></div>
+        <form class="stack-form compact-form" method="post" action="{{ url_for('create_room_invitation', room_id=room['id']) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field-grid two-columns"><div><label for="invite-role">身份</label><select id="invite-role" name="role"><option value="judge">普通成员</option><option value="admin">协管员</option></select></div><div><label for="invite-expiry">有效期</label><select id="invite-expiry" name="expiry"><option value="1">1 天</option><option value="7" selected>7 天</option><option value="30">30 天</option></select></div></div>
+          <label for="max-uses">最多使用次数</label><input id="max-uses" name="max_uses" type="number" min="1" max="100" value="1" required>
+          <label class="check-row"><input type="checkbox" name="can_score" value="1" checked><span>允许参与评分</span></label>
+          <label class="check-row"><input type="checkbox" name="assign_existing" value="1" checked><span>分配当前已有候选人</span></label>
+          <button class="primary-link-button" type="submit">生成邀请</button>
+        </form>
+      </article>
+      <article class="member-tool">
+        <div class="member-tool__heading"><h3>按账号添加</h3><p>对方需先注册账号。</p></div>
+        <form class="stack-form compact-form" method="post" action="{{ url_for('add_room_member', room_id=room['id']) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label for="member-username">账号名</label><input id="member-username" name="username" required maxlength="20">
+          <label for="member-role">身份</label><select id="member-role" name="role"><option value="judge">普通成员</option><option value="admin">协管员</option></select>
+          <label class="check-row"><input type="checkbox" name="can_score" value="1" checked><span>允许参与评分</span></label>
+          <label class="check-row"><input type="checkbox" name="assign_existing" value="1" checked><span>分配当前已有候选人</span></label>
+          <button class="secondary-button" type="submit">添加成员</button>
+        </form>
+      </article>
+      </div>
+    </section>
+  {% endif %}
+
+  <section class="workspace-section member-list-section" aria-labelledby="member-list-title">
+    <header class="workspace-section__heading">
+      <div><h2 id="member-list-title">成员列表</h2><p>移出成员时，已提交评分默认保留。</p></div>
+      <span class="section-count">{{ active_member_count }} 位</span>
+    </header>
+    <div class="member-table__head" aria-hidden="true"><span>成员</span><span>评分进度</span><span>权限与操作</span></div>
+    <div class="member-admin-list">
+      {% for member in members %}
+        <article class="member-admin-row{% if not member.active %} is-inactive{% endif %}">
+          <div class="member-main"><span class="avatar">{{ member.username[0]|upper }}</span><div><strong>{{ member.username }}</strong><small>{% if member.is_owner %}房主{% elif member.role == 'admin' %}协管员{% elif member.can_score %}评委{% else %}观察成员{% endif %} · {{ '有效' if member.active else '已移出' }}{% if not member.scores_included %} · 评分暂不计入{% endif %}</small></div></div>
+          <div class="member-progress"><strong>{{ member.scored_count }}/{{ member.assigned_count }}</strong><span>已完成</span>{% if member.missing_names %}<details><summary>漏评 {{ member.missing_names|length }} 人</summary><p>{{ member.missing_names|join('、') }}</p></details>{% elif member.can_score and member.active %}<span class="complete-text">无漏评</span>{% endif %}</div>
+          <div class="member-actions">
+            {% if room['is_owner'] and not member.is_owner %}
+              {% if member.active %}
+                <form method="post" action="{{ url_for('update_room_member_role', room_id=room['id'], user_id=member.id) }}" class="member-permission-form">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <label class="sr-only" for="member-role-{{ member.id }}">{{ member.username }}的身份</label><select id="member-role-{{ member.id }}" name="role"><option value="judge"{% if member.role == 'judge' %} selected{% endif %}>普通成员</option><option value="admin"{% if member.role == 'admin' %} selected{% endif %}>协管员</option></select>
+                  <label class="mini-check"><input type="checkbox" name="can_score" value="1"{% if member.can_score %} checked{% endif %}>参与评分</label>
+                  <button class="small-button" type="submit">保存权限</button>
+                </form>
+                <form method="post" action="{{ url_for('toggle_room_member', room_id=room['id'], user_id=member.id) }}" class="remove-member-form">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label class="sr-only" for="remove-reason-{{ member.id }}">移出{{ member.username }}的原因</label><input id="remove-reason-{{ member.id }}" name="reason" maxlength="200" placeholder="移出原因（选填）"><button class="small-button muted-button" type="submit">移出</button>
+                </form>
+                {% if not member.scores_included %}<form method="post" action="{{ url_for('update_member_score_inclusion', room_id=room['id'], user_id=member.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="include" value="1"><button class="small-button" type="submit">恢复计入评分</button></form>{% endif %}
+              {% else %}
+                <form method="post" action="{{ url_for('toggle_room_member', room_id=room['id'], user_id=member.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="small-button" type="submit">恢复成员</button></form>
+                <form method="post" action="{{ url_for('update_member_score_inclusion', room_id=room['id'], user_id=member.id) }}" class="inclusion-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="include" value="{{ '0' if member.scores_included else '1' }}">{% if member.scores_included %}<label class="sr-only" for="exclude-reason-{{ member.id }}">作废{{ member.username }}历史评分的原因</label><input id="exclude-reason-{{ member.id }}" name="reason" maxlength="200" required placeholder="作废评分原因"><button class="small-button danger-outline-button" type="submit">作废历史评分</button>{% else %}<button class="small-button" type="submit">恢复计入评分</button>{% endif %}</form>
+              {% endif %}
+            {% else %}<span class="self-label">{{ '当前账号' if member.is_current else '仅房主可管理' }}</span>{% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if room['is_owner'] %}
+    <section class="workspace-section member-secondary-section" aria-labelledby="member-maintenance-title">
+      <header class="workspace-section__heading"><div><h2 id="member-maintenance-title">其他管理</h2><p>房主转让与近期邀请记录。</p></div></header>
+      <div class="member-secondary-grid">
+      <article class="member-secondary-block">
+        <div class="member-tool__heading"><h3>转让房主</h3><p>转让后你将保留协管员身份，新房主获得全部管理权限。</p></div>
+        <form class="inline-form" method="post" action="{{ url_for('transfer_room_owner', room_id=room['id']) }}" data-confirm="确定转让房主吗？此操作会立即生效。">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label class="sr-only" for="new-owner">接任房主的成员</label><select id="new-owner" name="user_id" required><option value="">选择接任成员</option>{% for member in members if member.active and not member.is_owner %}<option value="{{ member.id }}">{{ member.username }}</option>{% endfor %}</select><button class="danger-outline-button" type="submit">转让房主</button>
+        </form>
+      </article>
+      <article class="member-secondary-block">
+        <div class="member-tool__heading"><h3>近期邀请</h3><p>可撤销尚未使用完的邀请。</p></div>
+        <div class="invite-list">{% for invitation in invitations %}<div><span>{{ '协管员' if invitation.role == 'admin' else ('评委' if invitation.can_score else '观察成员') }} · {{ invitation.used_count }}/{{ invitation.max_uses }} 次 · 到期 {{ invitation.expires_at }}</span>{% if not invitation.revoked_at and invitation.used_count < invitation.max_uses %}<form method="post" action="{{ url_for('revoke_room_invitation', room_id=room['id'], invitation_id=invitation.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-button" type="submit">撤销</button></form>{% else %}<small>已失效</small>{% endif %}</div>{% else %}<p class="field-help">尚未创建邀请。</p>{% endfor %}</div>
+      </article>
+      </div>
+    </section>
+  {% endif %}
+</main>
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+{% endblock %}

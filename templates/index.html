@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_brand.html" import brand_logo, brand_mark %}
+
+{% block title %}衡选{% endblock %}
+{% block body_class %}landing-page{% endblock %}
+
+{% block content %}
+<div class="landing-layout">
+  <header class="landing-header">
+    <a class="landing-brand-link" href="{{ url_for('index') }}" aria-label="衡选首页">
+      {{ brand_logo('nav') }}
+    </a>
+    <nav class="landing-nav" aria-label="账号入口">
+      <a class="landing-nav__login" href="{{ url_for('login') }}">登录</a>
+      <a class="landing-nav__register" href="{{ url_for('register') }}">创建账号</a>
+    </nav>
+  </header>
+
+  <main class="landing-main">
+    <section class="landing-hero" aria-labelledby="landing-title">
+      <div class="landing-wordmark">
+        {{ brand_mark('hero') }}
+        <h1 id="landing-title">衡选</h1>
+      </div>
+      <p class="landing-positioning">多人协作评分与选拔工具</p>
+      <p class="landing-description">让多人评分、进度核对和结果汇总保持在同一个地方。</p>
+      <div class="landing-actions">
+        <a class="primary-link-button landing-primary-action" href="{{ url_for('register') }}">创建评审</a>
+        <a class="secondary-button landing-secondary-action" href="{{ url_for('login') }}">登录</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <span>衡选</span>
+    <small>多人协作评分与选拔工具</small>
+  </footer>
+</div>
+{% endblock %}

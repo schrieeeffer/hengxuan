@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 设置 · {{ room['name'] }}{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="page-shell room-content-shell settings-shell">
+  {% set room_section = '设置' %}
+  {% set room_section_detail = score_count ~ ' 条评分记录' %}
+  {% include "_room_header.html" %}
+  <div class="room-page-toolbar"><a class="secondary-button" href="{{ url_for('room_audit', room_id=room['id']) }}">操作记录</a></div>
+
+  <section class="settings-grid">
+    <article class="panel settings-card">
+      <div class="settings-card-heading"><div><h2>评分状态</h2><p>控制成员是否可以提交、修改或撤销评分。</p><a class="context-help-link" href="{{ help_url('room-settings', 'room-status') }}" data-help-entry>了解房间状态</a></div></div>
+      <form method="post" action="{{ url_for('update_room_status', room_id=room['id']) }}" class="status-actions">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if room['status'] == 'draft' %}<button class="primary-link-button" name="status" value="scoring">开始评分</button>{% elif room['status'] == 'scoring' %}<button class="danger-outline-button" name="status" value="closed">结束评分</button>{% else %}<button class="primary-link-button" name="status" value="scoring">重新开放评分</button>{% endif %}
+      </form>
+      <p class="settings-note">房间结束后仍可查看历史结果，重新开放后可继续修改。</p>
+    </article>
+
+    <article class="panel settings-card">
+      <div class="settings-card-heading"><div><h2>基础设置</h2><p>名称、结果权限与加入方式。</p></div></div>
+      <form method="post" action="{{ url_for('update_room_general', room_id=room['id']) }}" class="stack-form compact-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="room-name">房间名称</label><input id="room-name" name="name" value="{{ room['name'] }}" maxlength="60" required>
+        <div class="field-label-row"><label for="result-visibility">结果可见范围</label><a class="context-help-link" href="{{ help_url('results-ranking', 'result-visibility') }}" data-help-entry>谁能看到结果？</a></div><select id="result-visibility" name="result_visibility">{% for value, label in result_visibility_labels.items() %}<option value="{{ value }}"{% if room['result_visibility'] == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+        {% if room['is_owner'] %}<label for="join-policy">加入方式</label><select id="join-policy" name="join_policy"><option value="password"{% if room['join_policy'] == 'password' %} selected{% endif %}>房间码与密码</option><option value="invite_only"{% if room['join_policy'] == 'invite_only' %} selected{% endif %}>仅邀请链接</option></select>{% else %}<input type="hidden" name="join_policy" value="{{ room['join_policy'] }}">{% endif %}
+        <button class="secondary-button" type="submit">保存设置</button>
+      </form>
+    </article>
+
+    <article class="panel settings-card">
+      <div class="settings-card-heading"><div><h2>评分制度</h2><p>当前为 {{ room['score_min'] }}–{{ room['score_max'] }} 分。</p></div></div>
+      <form method="post" action="{{ url_for('update_room_scheme', room_id=room['id']) }}" class="stack-form compact-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="scheme">分制</label><select id="scheme" name="scheme" data-score-scheme{% if score_count %} disabled{% endif %}><option value="5"{% if room['score_min'] == 1 and room['score_max'] == 5 %} selected{% endif %}>1–5 分制</option><option value="10"{% if room['score_min'] == 1 and room['score_max'] == 10 %} selected{% endif %}>1–10 分制</option><option value="100"{% if room['score_min'] == 0 and room['score_max'] == 100 %} selected{% endif %}>0–100 分制</option><option value="custom"{% if not ((room['score_min'] == 1 and room['score_max'] in [5, 10]) or (room['score_min'] == 0 and room['score_max'] == 100)) %} selected{% endif %}>自定义整数分制</option></select>
+        <div class="custom-score-settings" data-custom-score-fields{% if (room['score_min'] == 1 and room['score_max'] in [5, 10]) or (room['score_min'] == 0 and room['score_max'] == 100) %} hidden{% endif %}>
+          <div class="field-grid two-columns"><div><label for="score-min">最低分</label><input id="score-min" name="score_min" type="number" value="{{ room['score_min'] }}" min="0" max="999"{% if score_count %} disabled{% endif %}></div><div><label for="score-max">最高分</label><input id="score-max" name="score_max" type="number" value="{{ room['score_max'] }}" min="1" max="1000"{% if score_count %} disabled{% endif %}></div></div>
+        </div>
+        {% if score_count %}<p class="field-help warning-text">已有评分记录，分制已锁定。</p>{% else %}<button class="secondary-button" type="submit">保存分制</button>{% endif %}
+      </form>
+    </article>
+
+    {% if room['is_owner'] %}
+      <article class="panel settings-card">
+        <div class="settings-card-heading"><div><h2>成员加入</h2><p>房间码 {{ room['code'] }} · 仅房主可修改。</p></div></div>
+        <form method="post" action="{{ url_for('toggle_members_lock', room_id=room['id']) }}" class="compact-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="secondary-button full-width" type="submit">{{ '开放新成员加入' if room['members_locked'] else '暂停新成员加入' }}</button></form>
+        <form method="post" action="{{ url_for('update_room_password', room_id=room['id']) }}" class="stack-form compact-form divided-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="new-password">重设加入密码</label><input id="new-password" name="join_password" type="password" minlength="4" maxlength="128" required><button class="secondary-button" type="submit">更新密码</button></form>
+      </article>
+    {% endif %}
+  </section>
+</main>
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+{% endblock %}

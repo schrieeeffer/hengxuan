@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 结果 · {{ room['name'] }}{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="page-shell room-content-shell">
+  {% set room_section = '结果' %}
+  {% set room_section_detail = '排名与评分完成度' %}
+  {% include "_room_header.html" %}
+
+  {% if not state.results_visible %}
+    <section class="panel result-locked large-result-locked"><span class="state-mark" aria-hidden="true">i</span><strong>结果尚未开放</strong><p>当前规则为“{{ result_visibility_labels[room['result_visibility']] }}”。完成本人评分任务或等待房间结束后再查看。</p></section>
+  {% else %}
+    <section class="room-overview ranking-overview" aria-label="排名数据概览">
+      <div><span>候选人</span><strong>{{ state.candidate_count }}<small> 人</small></strong></div>
+      <div><span>参与评分</span><strong>{{ state.judge_count }}<small> 人</small></strong></div>
+      <div><span>整体进度</span><strong>{{ state.total_scores }}<small> / {{ state.total_possible_scores }}</small></strong></div>
+    </section>
+
+    {% set has_score_tasks = state.total_possible_scores > 0 %}
+    {% set all_scores_complete = has_score_tasks and state.total_scores == state.total_possible_scores %}
+    <div class="ranking-data-note {% if not has_score_tasks %}is-neutral{% elif all_scores_complete %}is-complete{% else %}is-incomplete{% endif %}" role="status">
+      <span class="ranking-data-note__mark" aria-hidden="true">{% if not has_score_tasks %}i{% elif all_scores_complete %}✓{% else %}!{% endif %}</span>
+      <div>
+        <strong>{% if not has_score_tasks %}暂无评分任务{% elif all_scores_complete %}评分任务已全部完成{% else %}存在未完成评分{% endif %}</strong>
+        <span>{% if not has_score_tasks %}添加候选人并分配评委后，这里会显示排名。{% elif all_scores_complete %}当前排名可用于最终核对。{% else %}排名会随剩余评分变化，请重点核对“评分进度”列。{% endif %}</span>
+      </div>
+    </div>
+
+    <section class="workspace-section results-workspace" aria-labelledby="results-title">
+      <div class="workspace-section__heading results-workspace__heading">
+        <div><h2 id="results-title">排名与评分进度</h2><p>按平均分排序，同分并列；未完成数据仅供过程参考</p></div>
+        <div class="results-heading-actions">
+          <span class="section-count">{{ state.rankings|length }} 位候选人</span>
+          <a class="small-button" href="{{ url_for('export_room_results', room_id=room['id']) }}" download>导出 CSV</a>
+        </div>
+      </div>
+      <div class="ranking-table-wrap results-table-wrap">
+        <table class="ranking-table results-table">
+          <caption class="sr-only">候选人排名、平均分、有效评分数与评分进度</caption>
+          <thead><tr><th scope="col">排名</th><th scope="col">候选人</th><th scope="col">平均分</th><th scope="col">有效评分</th><th scope="col">评分进度</th></tr></thead>
+          <tbody>
+            {% for item in state.rankings %}
+              {% set item_complete = item.expected_count > 0 and item.score_count == item.expected_count %}
+              <tr class="result-row {{ 'is-complete' if item_complete else 'is-incomplete' }}">
+                <td class="result-rank"><span class="rank-badge{% if item.rank and item.rank <= 3 %} top-rank{% endif %}">{{ item.rank or '—' }}</span></td>
+                <td class="result-candidate">
+                  <strong>{{ item.name }}</strong>
+                  <small>
+                    {% if item.candidate_no %}<span>{{ item.candidate_no }}</span>{% endif %}
+                    {% if item.group_name %}<span>{{ item.group_name }}</span>{% endif %}
+                    {% if not item.candidate_no and not item.group_name %}<span>未填写编号或分组</span>{% endif %}
+                  </small>
+                </td>
+                <td class="result-average"><strong class="average-score">{{ "%.2f"|format(item.avg_score) if item.avg_score is not none else '—' }}</strong></td>
+                <td class="result-valid-count"><strong>{{ item.score_count }}</strong><small> 份</small></td>
+                <td class="result-progress">
+                  <div class="result-progress__summary">
+                    <strong>{{ item.score_count }} / {{ item.expected_count }}</strong>
+                    <span class="result-completion-status {{ 'complete' if item_complete else 'incomplete' }}">
+                      {% if item_complete %}已完成{% elif item.expected_count > 0 %}缺 {{ item.expected_count - item.score_count }} 份{% else %}暂无任务{% endif %}
+                    </span>
+                  </div>
+                  <progress max="{{ item.expected_count or 1 }}" value="{{ item.score_count }}" aria-label="{{ item.name }}的评分进度">{{ item.score_count }}</progress>
+                </td>
+              </tr>
+            {% else %}
+              <tr class="empty-ranking-row"><td colspan="5">暂无候选人</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

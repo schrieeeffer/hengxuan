@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · {{ room['name'] }}{% endblock %}
+{% block body_class %}dashboard-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="dashboard-shell" data-scoring data-room-id="{{ room['id'] }}" data-can-score="{{ 'true' if can_score else 'false' }}" data-roster-revision="{{ state.roster_revision }}" data-room-status="{{ room['status'] }}">
+  {% set room_section = '评分' %}
+  {% if quick_values %}
+    {% set room_section_detail = room['score_min'] ~ '–' ~ room['score_max'] ~ ' 分制 · 点选即保存' %}
+  {% else %}
+    {% set room_section_detail = room['score_min'] ~ '–' ~ room['score_max'] ~ ' 分制 · 输入后保存' %}
+  {% endif %}
+  {% set room_progress = {'current': state.current_scored, 'total': state.current_assigned} %}
+  {% include "_room_header.html" %}
+
+  {% if room['status'] != 'scoring' %}
+    <section class="status-banner status-banner-{{ room['status'] }}">
+      <span class="status-banner__mark" aria-hidden="true">{{ '!' if room['status'] == 'draft' else 'i' }}</span>
+      <div>{% if room['status'] == 'draft' %}<strong>评分尚未开始</strong><span>管理员开始评分后才可提交分数。</span>
+      {% else %}<strong>本轮评分已结束</strong><span>当前页面为只读状态。</span>{% endif %}</div>
+    </section>
+  {% elif not room['member_can_score'] %}
+    <section class="status-banner status-banner-info"><span class="status-banner__mark" aria-hidden="true">i</span><div><strong>当前为观察权限</strong><span>你可以查看房间，但不参与本轮评分。</span></div></section>
+  {% endif %}
+
+  <section class="room-overview" aria-label="评分进度概览">
+    <div><span>候选人</span><strong>{{ state.candidate_count }}<small> 人</small></strong></div>
+    <div><span>参与评分</span><strong><b data-judge-count>{{ state.judge_count }}</b><small> 人</small></strong></div>
+    <div><span>整体进度</span><strong><b data-total-scores>{{ state.total_scores }}</b><small> / <span data-total-possible>{{ state.total_possible_scores }}</span></small></strong></div>
+  </section>
+
+  <div class="workspace-grid">
+    <section class="panel scoring-panel scoring-workbench" aria-labelledby="scoring-title">
+      <div class="panel-heading scoring-heading">
+        <div>
+          <div>
+            <h2 id="scoring-title">候选人评分</h2>
+            <p>{% if quick_values %}选择分数后立即保存{% else %}输入整数分数后按“保存”{% endif %}；已保存的分数可直接修改</p>
+            <a class="context-help-link" href="{{ help_url('scoring-saving', 'edit-undo') }}" data-help-entry>了解修改与撤销</a>
+          </div>
+        </div>
+        <span class="save-state" data-global-status>全部更改已保存</span>
+      </div>
+      {% if candidates %}
+        <div class="scoring-list-head" aria-hidden="true"><span>候选人</span><span>评分</span><span>状态</span></div>
+        <div class="candidate-list" data-candidate-list>
+          {% for candidate in candidates %}
+            {% set assigned = candidate['assignment_status'] in ['required', 'completed'] %}
+            {% set row_can_score = can_score and assigned %}
+            <article class="candidate-row{% if not quick_values %} numeric-row{% endif %}{% if not assigned %} is-unassigned{% endif %}{% if candidate['user_score'] is not none %} is-complete{% endif %}" data-candidate-id="{{ candidate['id'] }}" data-assigned="{{ 'true' if assigned else 'false' }}">
+              <div class="candidate-identity">
+                <span class="candidate-sequence">{{ candidate['candidate_no'] or "%02d"|format(candidate['position']) }}</span>
+                <div>
+                  <h3 id="candidate-name-{{ candidate['id'] }}">{{ candidate['name'] }}</h3>
+                  {% if candidate['group_name'] or candidate['notes'] %}
+                    <div class="candidate-context">
+                      {% if candidate['group_name'] %}<small>{{ candidate['group_name'] }}</small>{% endif %}
+                      {% if candidate['notes'] %}<span title="{{ candidate['notes'] }}">{{ candidate['notes'] }}</span>{% endif %}
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+              {% if quick_values %}
+                <div class="score-options" role="group" aria-labelledby="candidate-name-{{ candidate['id'] }}">
+                  {% for value in quick_values %}
+                    <button type="button" class="score-button{% if candidate['user_score'] == value %} is-selected{% endif %}" data-score="{{ value }}" aria-label="{{ candidate['name'] }} {{ value }} 分" aria-pressed="{{ 'true' if candidate['user_score'] == value else 'false' }}"{% if not row_can_score %} disabled{% endif %}><strong>{{ value }}</strong><small>分</small></button>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="numeric-score">
+                  <label class="sr-only" for="candidate-score-{{ candidate['id'] }}">给{{ candidate['name'] }}评分</label>
+                  <input id="candidate-score-{{ candidate['id'] }}" class="numeric-score-input" type="number" min="{{ room['score_min'] }}" max="{{ room['score_max'] }}" step="1" inputmode="numeric" value="{{ candidate['user_score'] if candidate['user_score'] is not none else '' }}" placeholder="{{ room['score_min'] }}–{{ room['score_max'] }}"{% if not row_can_score %} disabled{% endif %}>
+                  <button type="button" class="numeric-save-button"{% if not row_can_score %} disabled{% endif %}>保存</button>
+                </div>
+              {% endif %}
+              <div class="row-actions"><span class="row-status" aria-live="polite">{% if not assigned %}未分配{% elif candidate['user_score'] is not none %}已保存{% else %}待评分{% endif %}</span><button type="button" class="undo-button"{% if candidate['user_score'] is none %} hidden{% endif %}{% if not row_can_score %} disabled{% endif %}>撤销</button></div>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state"><h3>还没有候选人</h3><p>管理员添加候选人后会显示在这里。</p>{% if room['is_owner'] or room['member_role'] == 'admin' %}<a href="{{ url_for('room_candidates', room_id=room['id']) }}">添加候选人</a>{% endif %}</div>
+      {% endif %}
+    </section>
+
+    <aside class="side-stack">
+      <section class="panel ranking-panel" aria-labelledby="ranking-title">
+        <div class="panel-heading compact"><div><div><h2 id="ranking-title">当前结果</h2><p>{{ result_visibility_labels[room['result_visibility']] }}</p></div></div><a class="small-button" href="{{ url_for('room_results', room_id=room['id']) }}">查看完整结果</a></div>
+          <div class="ranking-table-wrap" data-results-table{% if not state.results_visible %} hidden{% endif %}>
+            <table class="ranking-table compact-ranking-table">
+              <caption class="sr-only">当前候选人排名与评分进度</caption>
+              <thead><tr><th scope="col">排名</th><th scope="col">候选人</th><th scope="col">平均分</th><th scope="col">评分进度</th></tr></thead>
+              <tbody data-ranking-body>
+                {% for item in state.rankings %}
+                  {% set ranking_complete = item.expected_count > 0 and item.score_count == item.expected_count %}
+                  <tr class="{{ 'is-complete' if ranking_complete else 'is-incomplete' }}">
+                    <td class="ranking-position"><span class="rank-badge{% if item.rank and item.rank <= 3 %} top-rank{% endif %}">{{ item.rank or '—' }}</span></td>
+                    <td class="ranking-person"><strong>{{ item.name }}</strong><small>{{ item.candidate_no or ('第 ' ~ item.position ~ ' 位') }}</small></td>
+                    <td class="ranking-average"><strong class="average-score">{{ "%.2f"|format(item.avg_score) if item.avg_score is not none else '—' }}</strong></td>
+                    <td class="ranking-progress-cell">
+                      <div class="ranking-progress">
+                        <span class="completion-count {{ 'complete' if ranking_complete else 'incomplete' }}">{{ item.score_count }}/{{ item.expected_count }}</span>
+                        <progress max="{{ item.expected_count or 1 }}" value="{{ item.score_count }}" aria-label="{{ item.name }}的评分进度">{{ item.score_count }}</progress>
+                      </div>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr class="empty-ranking-row"><td colspan="4">暂无候选人</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="result-locked" data-results-locked{% if state.results_visible %} hidden{% endif %}><span class="state-mark" aria-hidden="true">i</span><strong>结果暂不可见</strong><p>根据房间设置，完成本人评分或评分结束后方可查看。</p></div>
+      </section>
+
+      <section class="panel judges-panel" aria-labelledby="judges-title">
+        <div class="panel-heading compact"><div><div><h2 id="judges-title">评委进度</h2><p>检查是否存在漏评</p></div></div></div>
+        <div class="judge-list" data-judge-list>
+          {% for judge in state.judges %}<div class="judge-row"><div><span class="avatar">{{ judge.username[0]|upper }}</span><strong>{{ judge.username }}</strong>{% if judge.is_current %}<small>我</small>{% endif %}{% if judge.is_owner %}<small>房主</small>{% elif judge.role == 'admin' %}<small>协管员</small>{% endif %}</div><div><b>{{ judge.score_count }}/{{ judge.assigned_count }}</b><progress max="{{ judge.assigned_count or 1 }}" value="{{ judge.score_count }}">{{ judge.score_count }}</progress></div></div>{% endfor %}
+        </div>
+      </section>
+    </aside>
+  </div>
+</main>
+<div class="toast" data-toast role="status" aria-live="polite"><span class="feedback-mark toast__mark" data-toast-mark aria-hidden="true">✓</span><span data-toast-message></span></div>
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+{% endblock %}

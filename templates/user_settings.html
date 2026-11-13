@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 设置{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="page-shell user-center-shell">
+  <section class="page-heading compact-heading">
+    <div><h1>设置</h1><p>个人偏好与其他账号设置。</p></div>
+    <a class="secondary-button" href="{{ url_for('user_center') }}">返回用户中心</a>
+  </section>
+
+  <section class="panel settings-placeholder" aria-labelledby="settings-placeholder-title">
+    <span aria-hidden="true">i</span>
+    <div><h2 id="settings-placeholder-title">该功能开发中</h2><p>后续版本将在这里提供更多个人设置。</p></div>
+  </section>
+</main>
+{% endblock %}

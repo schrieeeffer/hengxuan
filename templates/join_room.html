@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 加入房间{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="narrow-shell">
+  <a class="back-link" href="{{ url_for('rooms') }}">← 返回我的房间</a>
+  <section class="form-card">
+    <div class="form-card-heading"><h1>加入评分房间</h1><p>输入房主提供的房间码和加入密码；收到邀请链接时请直接打开链接。</p></div>
+    <form method="post" class="stack-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="code">房间码</label>
+      <input id="code" class="code-input" name="code" minlength="4" maxlength="12" required autofocus autocomplete="off" placeholder="例如：ABCD234">
+      <label for="join_password">加入密码</label>
+      <input id="join_password" name="join_password" type="password" maxlength="128" required autocomplete="current-password" placeholder="请输入房间加入密码">
+      <button class="primary-button" type="submit">加入房间</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

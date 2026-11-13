@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 创建房间{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="narrow-shell">
+  <a class="back-link" href="{{ url_for('rooms') }}">← 返回我的房间</a>
+  <section class="form-card">
+    <div class="form-card-heading"><h1>创建评分房间</h1><p>创建后你将成为房主，可以管理候选人、成员与结果权限。</p></div>
+    <form method="post" class="stack-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="name">房间名称</label>
+      <input id="name" name="name" maxlength="60" required autofocus placeholder="例如：技术部第二轮面试">
+
+      <label for="join_password">加入密码</label>
+      <input id="join_password" name="join_password" type="password" minlength="4" maxlength="128" required autocomplete="new-password" placeholder="评委加入时需要输入">
+
+      <label for="scheme">评分制度</label>
+      <select id="scheme" name="scheme" data-score-scheme>
+        <option value="5">1–5 分制</option>
+        <option value="10">1–10 分制</option>
+        <option value="100">0–100 分制</option>
+        <option value="custom">自定义整数分制</option>
+      </select>
+      <div class="custom-score-settings" data-custom-score-fields hidden>
+        <div class="field-grid two-columns custom-score-fields">
+          <div><label for="score_min">自定义最低分</label><input id="score_min" name="score_min" type="number" min="0" max="999" value="0"></div>
+          <div><label for="score_max">自定义最高分</label><input id="score_max" name="score_max" type="number" min="1" max="1000" value="20"></div>
+        </div>
+        <p class="field-help">最低分必须小于最高分。</p>
+      </div>
+      <label for="result_visibility">结果可见范围</label>
+      <select id="result_visibility" name="result_visibility">
+        <option value="after_complete" selected>评委完成本人任务后可见</option>
+        <option value="after_closed">房间结束后可见</option>
+        <option value="live">评分过程中实时可见</option>
+      </select>
+      <label class="check-row"><input type="checkbox" name="owner_can_score" value="1" checked><span>我也参与评分</span></label>
+      <button class="primary-button" type="submit">创建房间</button>
+    </form>
+  </section>
+</main>
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+{% endblock %}

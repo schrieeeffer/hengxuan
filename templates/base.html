@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="衡选，多人协作评分与选拔工具。">
+    <meta name="application-name" content="衡选">
+    <meta name="theme-color" content="#f6f5f1">
+    <meta name="color-scheme" content="light">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}衡选{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body class="{% block body_class %}{% endblock %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack" aria-live="polite">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}">
+              <span class="feedback-mark" aria-hidden="true">{% if category == 'error' %}!{% elif category == 'success' %}✓{% else %}i{% endif %}</span>
+              <span class="flash__message">{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+    <script src="{{ url_for('static', filename='help.js') }}" defer></script>
+  </body>
+</html>

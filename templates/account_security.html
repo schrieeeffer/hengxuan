@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 账号与安全{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+{% if recovery_code %}
+  <main class="recovery-shell">
+    <section class="recovery-stage" aria-labelledby="recovery-code-title" role="status">
+      <p class="recovery-stage__eyebrow">账号恢复</p>
+      <header class="recovery-stage__heading">
+        <h1 id="recovery-code-title">新的恢复码已生成</h1>
+        <p>忘记密码时需要它。系统无法替你找回这个恢复码，请保存到安全的位置。</p>
+      </header>
+
+      <div class="recovery-value">
+        <label for="new-recovery-code">你的恢复码</label>
+        <span hidden><code>{{ recovery_code }}</code></span>
+        <div class="copy-field recovery-copy-field">
+          <input id="new-recovery-code" value="{{ recovery_code }}" readonly aria-describedby="recovery-code-note">
+          <button class="secondary-button" type="button" data-copy-value="{{ recovery_code }}">复制恢复码</button>
+        </div>
+        <p id="recovery-code-note">此页面只显示一次。新码生成后，旧码已经失效。</p>
+      </div>
+
+      <div class="recovery-actions">
+        {% if pending_invite_token %}
+          <a class="primary-link-button" href="{{ url_for('accept_invite', token=pending_invite_token) }}">我已保存，继续加入房间</a>
+          <a class="secondary-button" href="{{ url_for('rooms') }}">先进入衡选</a>
+        {% else %}
+          <a class="primary-link-button" href="{{ url_for('rooms') }}">我已经保存，进入衡选</a>
+        {% endif %}
+      </div>
+    </section>
+  </main>
+{% else %}
+  <main class="page-shell security-shell">
+    <section class="page-heading compact-heading">
+      <div><h1>账号与安全</h1><p>管理密码、恢复码和已登录设备。</p></div>
+      <a class="secondary-button" href="{{ url_for('user_center') }}">返回用户中心</a>
+    </section>
+
+    {% if admin_reset %}
+      <section class="credential-code-card" role="status">
+        <div><strong>{{ admin_reset.username }} 的临时重置码</strong><p>有效期至 {{ admin_reset.expires_at }}，成功使用一次后失效。</p></div>
+        <div class="copy-field credential-copy-field">
+          <label class="sr-only" for="admin-reset-code">临时重置码</label>
+          <input id="admin-reset-code" value="{{ admin_reset.code }}" readonly>
+          <button class="secondary-button" type="button" data-copy-value="{{ admin_reset.code }}">复制重置码</button>
+        </div>
+      </section>
+    {% endif %}
+    {% if pending_invite_token %}
+      <section class="notice-card"><p>账号已准备好，可以继续接受刚才的房间邀请。</p><a class="primary-link-button" href="{{ url_for('accept_invite', token=pending_invite_token) }}">继续加入房间</a></section>
+    {% endif %}
+
+    <section class="settings-grid">
+      <article class="panel settings-card">
+        <div class="settings-card-heading"><div><h2>修改密码</h2><p>修改后会退出其他设备，并生成新的恢复码。</p></div></div>
+        <form class="stack-form compact-form" method="post" action="{{ url_for('change_password') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label for="current_password">当前密码</label><input id="current_password" name="current_password" type="password" required autocomplete="current-password">
+          <label for="new_password">新密码</label><input id="new_password" name="password" type="password" minlength="6" maxlength="128" required autocomplete="new-password">
+          <label for="confirm_new_password">确认新密码</label><input id="confirm_new_password" name="confirm_password" type="password" minlength="6" maxlength="128" required autocomplete="new-password">
+          <button class="secondary-button" type="submit">更新密码</button>
+        </form>
+      </article>
+      <article class="panel settings-card">
+        <div class="settings-card-heading"><div><h2>账号恢复码</h2><p>忘记密码时，可使用恢复码自行重置。</p></div></div>
+        <form class="stack-form compact-form" method="post" action="{{ url_for('regenerate_recovery_code') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label for="recovery_password">验证当前密码</label><input id="recovery_password" name="password" type="password" required autocomplete="current-password">
+          <button class="secondary-button" type="submit">重新生成恢复码</button>
+        </form>
+        <form class="compact-form divided-form" method="post" action="{{ url_for('logout_other_sessions') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="danger-outline-button" type="submit">退出其他设备</button>
+        </form>
+      </article>
+    </section>
+
+    {% if is_platform_admin(g.user) %}
+      <section class="panel settings-card admin-reset-card">
+        <div class="settings-card-heading"><div><h2>账号协助重置</h2><p>为无法使用恢复码的用户生成 15 分钟有效的一次性重置码。</p></div></div>
+        <form class="inline-form" method="post" action="{{ url_for('issue_admin_password_reset') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label class="sr-only" for="reset_username">账号名</label><input id="reset_username" name="username" required placeholder="输入账号名">
+          <button class="secondary-button" type="submit">生成临时重置码</button>
+        </form>
+      </section>
+    {% endif %}
+  </main>
+{% endif %}
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+{% endblock %}

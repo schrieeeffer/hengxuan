@@ -1,0 +1,23 @@
+{% from "_brand.html" import brand_logo %}
+<header class="topbar">
+  <div class="topbar-main">
+    <a class="topbar-brand" href="{{ url_for('rooms') }}" aria-label="返回房间列表">
+      {{ brand_logo('nav', true) }}
+    </a>
+    <nav class="topbar-nav" aria-label="工作区导航">
+      <a class="{% if request.endpoint == 'rooms' %}is-active{% endif %}" href="{{ url_for('rooms') }}"{% if request.endpoint == 'rooms' %} aria-current="page"{% endif %}>房间</a>
+      {% if room is defined and room %}
+        <span aria-hidden="true">/</span>
+        <a class="topbar-room-link" href="{{ url_for('room_dashboard', room_id=room['id']) }}">{{ room['name'] }}</a>
+      {% endif %}
+    </nav>
+  </div>
+  <div class="account-area">
+    <a class="help-entry{% if request.endpoint in ['help_center', 'help_topic'] %} is-active{% endif %}" href="{{ help_url() }}" data-help-entry aria-label="帮助" title="帮助中心"{% if request.endpoint in ['help_center', 'help_topic'] %} aria-current="page"{% endif %}>帮助</a>
+    <a class="account-chip{% if request.endpoint in ['user_center', 'user_notifications', 'user_settings', 'account_security'] %} is-active{% endif %}" href="{{ url_for('user_center') }}" aria-label="进入用户中心：{{ g.user['username'] }}" title="用户中心：{{ g.user['username'] }}"{% if request.endpoint in ['user_center', 'user_notifications', 'user_settings', 'account_security'] %} aria-current="page"{% endif %}><span class="account-chip__name">{{ g.user['username'] }}</span><span class="account-chip__mobile">账号</span></a>
+    <form method="post" action="{{ url_for('logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="text-button">退出</button>
+    </form>
+  </div>
+</header>

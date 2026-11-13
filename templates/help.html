@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 帮助中心 · {{ topic.title }}{% endblock %}
+{% block body_class %}app-page help-page{% endblock %}
+
+{% macro help_navigation(class_name, label) -%}
+  <nav class="{{ class_name }}" aria-label="{{ label }}">
+    {% for item in help_topics %}
+      <a class="help-nav-link{% if item.slug == topic.slug %} is-active{% endif %}"
+         href="{{ help_url(item.slug) }}"
+         data-help-topic-link
+         {% if item.slug == topic.slug %}aria-current="page"{% endif %}>
+        <span>{{ loop.index }}</span>{{ item.title }}
+      </a>
+    {% endfor %}
+  </nav>
+{%- endmacro %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="help-shell" data-help-root data-return-to="{{ return_path }}">
+  <a class="help-back-link" href="{{ return_path }}" data-help-back>← 返回上一页</a>
+  <header class="help-heading">
+    <p class="help-eyebrow">使用帮助</p>
+    <h1>帮助中心</h1>
+    <p>这里说明衡选当前已经实现的操作、权限和数据变化。</p>
+  </header>
+
+  <details class="help-mobile-directory">
+    <summary>帮助目录 <strong>{{ topic.title }}</strong></summary>
+    {{ help_navigation('help-mobile-nav', '帮助目录') }}
+  </details>
+
+  <div class="help-layout">
+    <aside class="help-sidebar">
+      <p>帮助目录</p>
+      {{ help_navigation('help-nav', '帮助目录') }}
+    </aside>
+
+    <article class="help-article" aria-labelledby="help-topic-title">
+      <header class="help-article-heading">
+        <p>第 {{ help_topics.index(topic) + 1 }} 章</p>
+        <h2 id="help-topic-title">{{ topic.title }}</h2>
+        <p>{{ topic.summary }}</p>
+      </header>
+
+      {% for section in topic.sections %}
+        <section class="help-section" id="{{ section.id }}" tabindex="-1">
+          <h3>{{ section.title }}</h3>
+          {% for paragraph in section.get('paragraphs', ()) %}<p>{{ paragraph }}</p>{% endfor %}
+          {% if section.get('steps') %}
+            <ol>{% for step in section['steps'] %}<li>{{ step }}</li>{% endfor %}</ol>
+          {% endif %}
+          {% if section.get('items') %}
+            <ul>{% for item in section['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
+          {% endif %}
+          {% if section.get('note') %}<aside class="help-note"><strong>请注意</strong><p>{{ section.note }}</p></aside>{% endif %}
+        </section>
+      {% endfor %}
+
+      <nav class="help-article-pagination" aria-label="帮助文章翻页">
+        {% set current_index = help_topics.index(topic) %}
+        {% if current_index > 0 %}<a href="{{ help_url(help_topics[current_index - 1].slug) }}" data-help-topic-link>← {{ help_topics[current_index - 1].title }}</a>{% else %}<span></span>{% endif %}
+        {% if current_index + 1 < help_topics|length %}<a href="{{ help_url(help_topics[current_index + 1].slug) }}" data-help-topic-link>{{ help_topics[current_index + 1].title }} →</a>{% endif %}
+      </nav>
+    </article>
+  </div>
+</main>
+{% endblock %}

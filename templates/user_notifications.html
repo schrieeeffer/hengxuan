@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 通知{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="page-shell user-center-shell">
+  <section class="page-heading compact-heading">
+    <div><h1>通知</h1><p>显示最近 100 条系统通知。</p></div>
+    <a class="secondary-button" href="{{ url_for('user_center') }}">返回用户中心</a>
+  </section>
+
+  <section class="panel notification-panel" aria-label="系统通知列表">
+    {% if notifications %}
+      <div class="notification-list">
+        {% for notification in notifications %}
+          <article class="notification-item">
+            <span class="notification-item__mark" aria-hidden="true">i</span>
+            <div>
+              {% if notification.kind == 'room_member_removed' %}
+                <strong>你已被移出房间“{{ notification.room_name }}”</strong>
+                <p>{% if notification.reason %}移出理由：{{ notification.reason }}{% else %}房主未填写移出理由。{% endif %}</p>
+              {% else %}
+                <strong>系统通知</strong>
+              {% endif %}
+              <small>{{ notification.actor_name or '系统' }} · {{ notification.created_at }}</small>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state user-notification-empty">
+        <h2>暂无通知</h2>
+        <p>如果你被移出房间，通知和房主填写的理由会显示在这里。</p>
+      </div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

@@ -1,0 +1,13 @@
+# Only runtime sources enter the build context.
+**
+!Dockerfile
+!requirements.txt
+!app.py
+!help_content.py
+!wsgi.py
+!templates/
+!templates/*.html
+!static/
+!static/*.js
+!static/*.css
+!static/*.svg

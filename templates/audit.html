@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 操作记录 · {{ room['name'] }}{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="page-shell room-content-shell">
+  {% set room_section = '操作记录' %}
+  {% set room_section_detail = '最近 100 条' %}
+  {% include "_room_header.html" %}
+  <div class="room-page-toolbar"><a class="secondary-button" href="{{ url_for('room_settings', room_id=room['id']) }}">返回设置</a></div>
+  <section class="panel audit-panel">
+    {% set audit_target_labels = {'room': '房间', 'user': '成员', 'invitation': '邀请', 'candidate': '候选人'} %}
+    <div class="audit-list">{% for event in events %}<article><span class="audit-dot"></span><div><strong>{{ audit_action_labels.get(event.action, event.action) }}</strong><p>{{ event.actor_name or '系统' }} · {{ event.created_at }}</p></div>{% if event.target_type %}<small>{{ audit_target_labels.get(event.target_type, event.target_type) }} #{{ event.target_id or '—' }}</small>{% endif %}</article>{% else %}<div class="empty-state"><h2>还没有操作记录</h2><p>修改房间、成员或评分后，记录会显示在这里。</p></div>{% endfor %}</div>
+  </section>
+</main>
+{% endblock %}

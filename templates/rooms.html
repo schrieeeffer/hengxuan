@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 房间{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="page-shell">
+  <section class="page-heading room-heading">
+    <div><h1>房间</h1><p>选择一个房间继续评审。</p></div>
+    <div class="heading-actions"><a class="secondary-button" href="{{ url_for('join_room') }}">加入房间</a><a class="primary-link-button" href="{{ url_for('create_room') }}">创建房间</a></div>
+  </section>
+
+  {% if rooms %}
+    <section class="room-list" aria-label="已加入的房间">
+      <div class="room-list__head" aria-hidden="true">
+        <span>房间</span><span>身份</span><span>候选人</span><span>评委</span><span>已提交</span><span>状态</span><span></span>
+      </div>
+      {% for room in rooms %}
+        <a class="room-list__row" href="{{ url_for('room_dashboard', room_id=room['id']) }}">
+          <span class="room-list__identity"><strong>{{ room['name'] }}</strong><small>{{ room['code'] }}</small></span>
+          <span class="room-list__role" data-label="身份">{{ '房主' if room['is_owner'] else ('协管员' if room['member_role'] == 'admin' else ('评委' if room['can_score'] else '观察成员')) }}</span>
+          <span class="room-list__metric" data-label="候选人"><strong>{{ room['candidate_count'] }}</strong><small> 人</small></span>
+          <span class="room-list__metric" data-label="评委"><strong>{{ room['judge_count'] }}</strong><small> 人</small></span>
+          <span class="room-list__metric" data-label="已提交"><strong>{{ room['submitted_count'] }}</strong><small> 条</small></span>
+          <span class="room-status room-status-{{ room['status'] }}"><i aria-hidden="true"></i>{{ room_status_labels[room['status']] }}</span>
+          <span class="room-list__enter" aria-hidden="true">→</span>
+        </a>
+      {% endfor %}
+    </section>
+  {% else %}
+    <section class="empty-state large-empty">
+      <span class="empty-state__mark" aria-hidden="true">＋</span>
+      <h2>还没有加入任何房间</h2>
+      <p>创建一个新评分房间，或输入其他人分享的房间码加入。</p>
+      <div class="heading-actions"><a class="secondary-button" href="{{ url_for('join_room') }}">加入房间</a><a class="primary-link-button" href="{{ url_for('create_room') }}">创建房间</a></div>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

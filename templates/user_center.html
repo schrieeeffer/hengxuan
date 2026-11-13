@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 用户中心{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="page-shell user-center-shell">
+  <section class="page-heading compact-heading">
+    <div><h1>用户中心</h1><p>{{ g.user['username'] }}，在这里管理通知与账号选项。</p></div>
+    <a class="secondary-button" href="{{ url_for('rooms') }}">返回房间</a>
+  </section>
+
+  <nav class="user-center-grid" aria-label="用户中心选项">
+    <a class="panel user-center-card" href="{{ url_for('user_notifications') }}">
+      <span class="user-center-card__eyebrow">系统消息</span>
+      <strong>通知</strong>
+      <p>查看被移出房间的通知及房主填写的理由。</p>
+      <small>{{ notification_count }} 条通知</small>
+    </a>
+    <a class="panel user-center-card" href="{{ url_for('account_security') }}">
+      <span class="user-center-card__eyebrow">登录与恢复</span>
+      <strong>账号与安全</strong>
+      <p>修改密码、管理恢复码和退出其他设备。</p>
+      <small>进入账号安全设置</small>
+    </a>
+    <a class="panel user-center-card" href="{{ url_for('user_settings') }}">
+      <span class="user-center-card__eyebrow">偏好</span>
+      <strong>设置</strong>
+      <p>个人偏好与其他账号设置的预留入口。</p>
+      <small>查看开发状态</small>
+    </a>
+  </nav>
+</main>
+{% endblock %}

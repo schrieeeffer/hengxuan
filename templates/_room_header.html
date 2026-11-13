@@ -1,0 +1,24 @@
+<section class="room-context" aria-labelledby="room-title">
+  <div class="room-context__main">
+    <div class="room-context__meta">
+      <span class="room-status room-status-{{ room['status'] }}"><i aria-hidden="true"></i>{{ room_status_labels[room['status']] }}</span>
+      <span class="room-code">房间 {{ room['code'] }}</span>
+    </div>
+    <h1 id="room-title">{{ room['name'] }}</h1>
+    <p>
+      <strong>{{ room_section|default('房间') }}</strong>
+      {% if room_section_detail is defined and room_section_detail %}<span aria-hidden="true">·</span> {{ room_section_detail }}{% endif %}
+    </p>
+  </div>
+  <div class="room-context__aside">
+    {% if room_progress is defined and room_progress %}
+      <div class="room-context__progress">
+        <span>我的进度</span>
+        <strong><b data-current-scored>{{ room_progress.current }}</b> / <span data-current-assigned>{{ room_progress.total }}</span></strong>
+        <progress data-current-progress max="{{ room_progress.total or 1 }}" value="{{ room_progress.current }}">{{ room_progress.current }}</progress>
+      </div>
+    {% endif %}
+    <a class="text-link-button" href="{{ url_for('rooms') }}">切换房间</a>
+  </div>
+</section>
+{% include "_room_nav.html" %}

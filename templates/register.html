@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}衡选 · 创建账号{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<main class="auth-layout">
+  {% include "_auth_header.html" %}
+
+  <section class="auth-panel" aria-labelledby="register-title">
+    <header class="auth-panel__heading">
+      <h1 id="register-title">创建账号</h1>
+      <p>注册后可以创建或加入评审房间。</p>
+    </header>
+    <form method="post" class="auth-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="auth-field">
+        <label for="username">账号名</label>
+        <input id="username" name="username" type="text" autocomplete="username" minlength="2" maxlength="20" required autofocus placeholder="2–20 个字符" value="{{ request.form.get('username', '') }}">
+      </div>
+      <div class="auth-field">
+        <label for="password">密码</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="128" required placeholder="至少 6 位">
+      </div>
+      <div class="auth-field">
+        <label for="confirm_password">确认密码</label>
+        <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="6" maxlength="128" required placeholder="再次输入密码">
+      </div>
+      <button type="submit" class="primary-button">创建账号</button>
+    </form>
+    <p class="auth-security-note">创建后会显示一次账号恢复码，请先保存好。</p>
+    <p class="auth-switch">已有账号？<a href="{{ url_for('login') }}">返回登录</a></p>
+  </section>
+
+  <p class="auth-product-note">多人协作评分与选拔工具</p>
+</main>
+{% endblock %}

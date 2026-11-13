@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 候选人 · {{ room['name'] }}{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="page-shell room-content-shell">
+  {% set active_candidate_count = candidates|rejectattr('archived')|list|length %}
+  {% set room_section = '候选人' %}
+  {% set room_section_detail = active_candidate_count ~ ' 位参与当前评分' %}
+  {% include "_room_header.html" %}
+
+  <section class="workspace-section candidate-create-section" aria-labelledby="candidate-create-title">
+    <header class="workspace-section__heading">
+      <div><h2 id="candidate-create-title">添加候选人</h2><p>新增后会进入当前评分名单。</p></div>
+    </header>
+    <form method="post" action="{{ url_for('add_candidate', room_id=room['id']) }}" class="candidate-add-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="candidate-field"><span>编号</span><input name="candidate_no" maxlength="30" placeholder="选填"></label>
+      <label class="candidate-field"><span>姓名</span><input name="name" maxlength="50" required placeholder="必填"></label>
+      <label class="candidate-field"><span>分组 / 部门</span><input name="group_name" maxlength="50" placeholder="选填"></label>
+      <label class="candidate-field candidate-field--notes"><span>备注</span><input name="notes" maxlength="300" placeholder="选填"></label>
+      {% if room['status'] == 'closed' %}<label class="check-row reopen-check"><input type="checkbox" name="reopen" value="1" required><span>添加后重新开放评分</span></label>{% endif %}
+      <button class="primary-link-button" type="submit">添加</button>
+    </form>
+  </section>
+
+  <section class="workspace-section candidate-list-section" aria-labelledby="candidate-list-title">
+    <header class="workspace-section__heading">
+      <div><h2 id="candidate-list-title">候选人列表</h2><p>可直接修改字段并保存；归档后不再参与当前评分。</p><a class="context-help-link" href="{{ help_url('candidate-management', 'save-archive') }}" data-help-entry>了解保存与归档</a></div>
+      <span class="section-count">{{ active_candidate_count }} 位</span>
+    </header>
+    {% if candidates %}
+      <div class="candidate-table">
+        <div class="candidate-table__head" aria-hidden="true">
+          <span>排序</span><span>编号</span><span>姓名</span><span>分组 / 部门</span><span>备注</span><span>评分记录</span><span>操作</span>
+        </div>
+        <div class="candidate-admin-list">
+          {% for candidate in candidates %}
+            <form method="post" action="{{ url_for('edit_candidate', room_id=room['id'], candidate_id=candidate['id']) }}" class="candidate-admin-row{% if candidate['archived'] %} is-archived{% endif %}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <label class="candidate-cell"><span>排序</span><input class="order-input" name="position" type="number" min="1" max="9999" value="{{ candidate['position'] }}"></label>
+              <label class="candidate-cell"><span>编号</span><input name="candidate_no" maxlength="30" value="{{ candidate['candidate_no'] or '' }}" placeholder="—"></label>
+              <label class="candidate-cell"><span>姓名</span><input name="name" maxlength="50" value="{{ candidate['name'] }}" required></label>
+              <label class="candidate-cell"><span>分组 / 部门</span><input name="group_name" maxlength="50" value="{{ candidate['group_name'] or '' }}" placeholder="—"></label>
+              <label class="candidate-cell"><span>备注</span><input name="notes" maxlength="300" value="{{ candidate['notes'] or '' }}" placeholder="—"></label>
+              <span class="record-count" data-label="评分记录">{{ candidate['score_count'] }} 条{% if candidate['archived'] %}<small>已归档</small>{% endif %}</span>
+              <span class="candidate-row-actions"><button class="small-button" type="submit">保存</button><button class="small-button muted-button" type="submit" formaction="{{ url_for('archive_candidate', room_id=room['id'], candidate_id=candidate['id']) }}">{{ '恢复' if candidate['archived'] else '归档' }}</button></span>
+            </form>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-state"><h3>还没有候选人</h3><p>使用上方表单添加第一位候选人。</p></div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

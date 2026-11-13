@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}衡选 · 接受邀请{% endblock %}
+{% block body_class %}app-page{% endblock %}
+
+{% block content %}
+{% include "_topbar.html" %}
+<main class="narrow-shell">
+  <section class="form-card invite-card">
+    {% if invitation %}
+      <p class="invite-card__eyebrow">房间邀请</p>
+      <h1>{{ invitation.room_name }}</h1>
+      <p>房间码 {{ invitation.room_code }} · 将以{{ '协管员' if invitation.role == 'admin' else ('评委' if invitation.can_score else '观察成员') }}身份加入。</p>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="primary-button" type="submit">确认加入</button>
+      </form>
+    {% else %}
+      <p class="invite-card__eyebrow">房间邀请</p>
+      <h1>这个邀请已失效</h1>
+      <p>该邀请可能已过期、被撤销或达到使用次数上限。</p>
+      <a class="secondary-button" href="{{ url_for('rooms') }}">返回我的房间</a>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

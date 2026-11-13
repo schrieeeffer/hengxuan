@@ -1,0 +1,51 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m ruff check .
+      - run: python -m pytest -q
+      - run: node --check static/app.js
+      - run: node --check static/help.js
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: docker build -t hengxuan:ci .
+      - name: Verify service startup
+        run: |
+          docker run -d --name hengxuan-ci -p 127.0.0.1:8000:8000 hengxuan:ci
+          curl --fail --retry 12 --retry-connrefused --retry-delay 1 http://127.0.0.1:8000/healthz
+          curl --fail http://127.0.0.1:8000/ > /dev/null
+      - name: Container logs
+        if: failure()
+        run: docker logs hengxuan-ci
+      - name: Clean up
+        if: always()
+        run: docker rm -f hengxuan-ci || true

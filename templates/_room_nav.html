@@ -1,0 +1,13 @@
+<nav class="room-tabs" aria-label="房间功能">
+  {% if room['is_owner'] or room['member_role'] == 'admin' %}
+    <a class="{% if request.endpoint == 'room_candidates' %}is-active{% endif %}" href="{{ url_for('room_candidates', room_id=room['id']) }}"{% if request.endpoint == 'room_candidates' %} aria-current="page"{% endif %}>候选人</a>
+  {% endif %}
+  <a class="{% if request.endpoint == 'room_dashboard' %}is-active{% endif %}" href="{{ url_for('room_dashboard', room_id=room['id']) }}"{% if request.endpoint == 'room_dashboard' %} aria-current="page"{% endif %}>评分</a>
+  {% if room['is_owner'] or room['member_role'] == 'admin' %}
+    <a class="{% if request.endpoint == 'room_members_page' %}is-active{% endif %}" href="{{ url_for('room_members_page', room_id=room['id']) }}"{% if request.endpoint == 'room_members_page' %} aria-current="page"{% endif %}>成员</a>
+  {% endif %}
+  <a class="{% if request.endpoint == 'room_results' %}is-active{% endif %}" href="{{ url_for('room_results', room_id=room['id']) }}"{% if request.endpoint == 'room_results' %} aria-current="page"{% endif %}>结果</a>
+  {% if room['is_owner'] or room['member_role'] == 'admin' %}
+    <a class="{% if request.endpoint in ['room_settings', 'room_audit'] %}is-active{% endif %}" href="{{ url_for('room_settings', room_id=room['id']) }}"{% if request.endpoint in ['room_settings', 'room_audit'] %} aria-current="page"{% endif %}>设置</a>
+  {% endif %}
+</nav>

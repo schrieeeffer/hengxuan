@@ -1,0 +1,21 @@
+[Unit]
+Description=Hengxuan collaborative review service
+After=network.target
+
+[Service]
+Type=simple
+User=hengxuan
+Group=hengxuan
+WorkingDirectory=/opt/hengxuan
+StateDirectory=hengxuan
+Environment=DATABASE_PATH=/var/lib/hengxuan/scores.db
+EnvironmentFile=-/etc/hengxuan.env
+ExecStart=/opt/hengxuan/.venv/bin/gunicorn --bind 127.0.0.1:8000 --workers 1 --threads 8 --timeout 30 --access-logfile - --error-logfile - wsgi:app
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
