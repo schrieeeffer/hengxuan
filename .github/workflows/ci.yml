@@ -41,7 +41,7 @@ jobs:
       - name: Verify service startup
         run: |
           docker run -d --name hengxuan-ci -p 127.0.0.1:8000:8000 hengxuan:ci
-          curl --fail --retry 12 --retry-connrefused --retry-delay 1 http://127.0.0.1:8000/healthz
+          curl --fail --retry 15 --retry-all-errors --retry-delay 1 --max-time 5 http://127.0.0.1:8000/healthz
           curl --fail http://127.0.0.1:8000/ > /dev/null
       - name: Container logs
         if: failure()
